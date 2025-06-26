@@ -11,9 +11,7 @@ def init_scheduler():
         scheduler = BackgroundScheduler()
         # Schedule weekly reminders (e.g., every Monday at 9 AM)
         scheduler.add_job(
-            lambda: send_balance_reminders(
-                "SSC20257272", "2025-1", "+263711206287"  # Replace with actual data
-            ),
+            lambda: send_balance_reminders("SSC20257279", "2025-1"),
             trigger="cron",
             day_of_week="mon",
             hour=9,

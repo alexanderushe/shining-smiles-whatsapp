@@ -23,3 +23,15 @@ A lightweight Flask app for sending WhatsApp payment confirmations and balance r
    ```bash
    git clone https://github.com/alexanderushe/shining-smiles-whatsapp.git
    cd shining-smiles-whatsapp
+
+2. **Create and Activate Virtual Environment**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+3. **▶️ Run the App**
+   ```bash
+   python app.py
+
+4. **Database**
+   ```bash
+   psql -U postgres -h localhost -d shining_smiles
