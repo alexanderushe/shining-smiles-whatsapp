@@ -34,20 +34,21 @@ class SMSClient:
             raise
 
     def get_student_payments(self, student_id, term):
-        """Fetch student payments for a term."""
+        """Fetch student payment data."""
         try:
             params = {"student_id_number": student_id, "term": term}
+            logger.debug(f"Requesting payments for {student_id}: URL={self.base_url}/students/payments, Params={params}, Headers={self.headers}")
             response = requests.get(
-                f"{self.base_url}/student/payments/",
+                f"{self.base_url}/students/payments",
                 headers=self.headers,
                 params=params,
                 timeout=10
             )
             response.raise_for_status()
-            logger.info(f"Fetched payments for {student_id}")
+            logger.debug(f"Payment response for {student_id}: Status={response.status_code}, Body={response.text}")
             return response.json()
         except requests.RequestException as e:
-            logger.error(f"Error fetching payments for {student_id}: {str(e)}")
+            logger.error(f"Error fetching payments for {student_id}: {str(e)}, Response: {e.response.text if e.response else 'No response'}")
             raise
 
     def get_students_in_debt(self, student_id=None):
