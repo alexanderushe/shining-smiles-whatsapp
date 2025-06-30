@@ -1,13 +1,22 @@
+# src/services/payment_service.py
 from src.api.sms_client import SMSClient
 from src.utils.whatsapp import send_whatsapp_message
 from src.utils.logger import setup_logger
 from src.utils.database import init_db, StudentContact
 import datetime
+from flask import current_app
 
 logger = setup_logger(__name__)
 
+# Term end dates for 2025
+TERM_END_DATES = {
+    "2025-1": datetime.datetime(2025, 3, 31),
+    "2025-2": datetime.datetime(2025, 7, 31),
+    "2025-3": datetime.datetime(2025, 11, 30)
+}
+
 def check_new_payments(student_id, term, phone_number=None):
-    """Check for new payments and send confirmation."""
+    """Check for new payments, send confirmation, and generate gate pass if applicable."""
     try:
         client = SMSClient()
         session = init_db()
@@ -117,12 +126,25 @@ def check_new_payments(student_id, term, phone_number=None):
         try:
             statement = client.get_student_account_statement(student_id, term)
             logger.debug(f"Statement for {student_id}: {statement}")
-            balance = statement.get("balance", 0) if isinstance(statement, dict) else 0
+            total_fees = statement.get("data", {}).get("total_fees", 1000.0)  # Fallback if total_fees is missing
+            balance = statement.get("data", {}).get("balance", 0)
         except Exception as e:
             logger.error(f"Failed to fetch account statement: {str(e)}")
-            balance = "N/A"
+            return {"error": f"Failed to fetch account statement: {str(e)}"}
 
-        # Send WhatsApp message
+        # Generate gate pass if payment meets threshold
+        payment_percentage = (total_paid / total_fees) * 100
+        if payment_percentage >= 50:
+            with current_app.test_client() as client:
+                response = client.post(
+                    f"/generate-gatepass?student_id={student_id}&term={term}&payment_amount={total_paid}&total_fees={total_fees}"
+                )
+                if response.status_code != 200:
+                    logger.error(f"Failed to generate gate pass for {student_id}: {response.json}")
+                    return {"error": f"Failed to generate gate pass: {response.json.get('error')}"}
+                logger.info(f"Gate pass generated for {student_id}: {response.json}")
+
+        # Send payment confirmation
         message = (
             f"Dear {fullname}, thank you for your payment of ${total_paid} for {student_id} (Term {term}). "
             f"Your current balance is ${balance}."
