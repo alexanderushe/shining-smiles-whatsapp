@@ -1,4 +1,7 @@
 # app.py
+from dotenv import load_dotenv
+import os
+load_dotenv()  # Load .env file explicitly
 from flask import Flask, request
 from src.utils.logger import setup_logger
 from src.utils.scheduler import init_scheduler
@@ -6,14 +9,10 @@ from src.services.payment_service import check_new_payments
 from src.services.reminder_service import send_balance_reminders
 from src.utils.database import init_db, StudentContact
 from config import get_config
-import os
-from dotenv import load_dotenv
 import datetime
 
-load_dotenv()
 app = Flask(__name__)
 app.config.from_object(get_config())
-
 logger = setup_logger(__name__)
 init_scheduler()
 
@@ -77,7 +76,7 @@ def update_contact():
         if contact:
             contact.firstname = firstname or contact.firstname
             contact.lastname = lastname or contact.lastname
-            contact.student_mobile = phone_number  # Parent's number
+            contact.student_mobile = phone_number
             contact.guardian_mobile_number = phone_number if not contact.guardian_mobile_number else contact.guardian_mobile_number
             contact.preferred_phone_number = phone_number
             contact.last_updated = datetime.datetime.utcnow()
@@ -101,4 +100,5 @@ def update_contact():
         return {"error": str(e)}, 500
 
 if __name__ == "__main__":
+    logger.info(f"Environment variables - SMS_API_BASE_URL: {os.getenv('SMS_API_BASE_URL')}, SMS_API_KEY: {os.getenv('SMS_API_KEY')}")
     app.run(debug=app.config["DEBUG"], host="0.0.0.0", port=5000)

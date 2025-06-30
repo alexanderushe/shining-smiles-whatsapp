@@ -49,7 +49,7 @@ def init_scheduler():
     try:
         scheduler = BackgroundScheduler()
         # src/utils/scheduler.py (temporary)
-        scheduler.add_job(sync_student_profiles, trigger="date", run_date=datetime.datetime.now() + datetime.timedelta(seconds=30))
+        #scheduler.add_job(sync_student_profiles, trigger="date", run_date=datetime.datetime.now() + datetime.timedelta(seconds=30))
         # Daily profile sync (every day at 2 AM)
         scheduler.add_job(
             sync_student_profiles,
