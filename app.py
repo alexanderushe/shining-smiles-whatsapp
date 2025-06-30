@@ -248,7 +248,7 @@ def generate_gatepass():
         qr_path = f"temp/qr_{pass_id}.png"
 
         # Generate QR code
-        qr_url = f"https://your-heroku-app.herokuapp.com/verify-gatepass?pass_id={pass_id}&whatsapp_number={contact.preferred_phone_number}"
+        qr_url = f"https://shining-smiles-app-809413c70177.herokuapp.com/verify-gatepass?pass_id={pass_id}&whatsapp_number={contact.preferred_phone_number}"
         logger.debug(f"Generating QR code for URL: {qr_url}")
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(qr_url)
@@ -383,7 +383,7 @@ def generate_gatepass():
                 body="Your gate pass is attached. This pass is valid only for your WhatsApp number. Do not share.",
                 media_url=[public_url],
                 to=f"whatsapp:{contact.preferred_phone_number}",
-                status_callback=f"https://your-heroku-app.herokuapp.com/message-status"
+                status_callback=f"https://shining-smiles-app-809413c70177.herokuapp.com//message-status"
             )
             logger.info(f"Gate pass PDF sent for {student_id} to {contact.preferred_phone_number}: SID={message.sid}, Status={message.status}")
 
@@ -445,7 +445,7 @@ def whatsapp_incoming():
                 os.makedirs("temp", exist_ok=True)
 
                 # Generate QR code
-                qr_url = f"https://your-heroku-app.herokuapp.com/verify-gatepass?pass_id={gate_pass.pass_id}&whatsapp_number={from_number}"
+                qr_url = f"https://shining-smiles-app-809413c70177.herokuapp.com//verify-gatepass?pass_id={gate_pass.pass_id}&whatsapp_number={from_number}"
                 logger.debug(f"Generating QR code for URL: {qr_url}")
                 qr = qrcode.QRCode(version=1, box_size=10, border=4)
                 qr.add_data(qr_url)
@@ -573,7 +573,7 @@ def whatsapp_incoming():
                         body="Your gate pass is attached. This pass is valid only for your WhatsApp number. Do not share.",
                         media_url=[public_url],
                         to=f"whatsapp:{from_number}",
-                        status_callback=f"https://your-heroku-app.herokuapp.com/message-status"
+                        status_callback=f"https://shining-smiles-app-809413c70177.herokuapp.com//message-status"
                     )
                     logger.info(f"Gate pass PDF sent for {contact.student_id} to {from_number}: SID={message.sid}, Status={message.status}")
 
