@@ -99,6 +99,79 @@ def update_contact():
         logger.error(f"Error updating contact for {student_id}: {str(e)}")
         return {"error": str(e)}, 500
 
+@app.route("/get-student-profile", methods=["GET"])
+def get_student_profile():
+    """Retrieve student profile from database or SMS API."""
+    try:
+        student_id = request.args.get("student_id")
+        if not student_id:
+            logger.error("Missing student_id")
+            return {"error": "student_id required"}, 400
+
+        session = init_db()
+        contact = session.query(StudentContact).filter_by(student_id=student_id).first()
+        if contact:
+            logger.info(f"Found profile for {student_id} in database")
+            return {
+                "status": "success",
+                "profile": {
+                    "student_id": contact.student_id,
+                    "firstname": contact.firstname,
+                    "lastname": contact.lastname,
+                    "phone_number": contact.preferred_phone_number,
+                    "last_updated": contact.last_updated.isoformat()
+                }
+            }, 200
+
+        # Fallback to SMS API
+        from src.api.sms_client import SMSClient
+        try:
+            client = SMSClient()
+            profile = client.get_student_profile(student_id)
+            profile_data = profile.get("data", {})
+            firstname = profile_data.get("firstname")
+            lastname = profile_data.get("lastname")
+            student_mobile = profile_data.get("student_mobile")
+            guardian_mobile = profile_data.get("guardian_mobile_number")
+            if student_mobile and not student_mobile.startswith("+"):
+                student_mobile = f"+263{student_mobile.lstrip('0')}"
+            if guardian_mobile and not guardian_mobile.startswith("+"):
+                guardian_mobile = f"+263{guardian_mobile.lstrip('0')}"
+            preferred_phone = student_mobile or guardian_mobile
+            if not preferred_phone:
+                logger.error(f"No phone number in profile for {student_id}")
+                return {"error": "No phone number in profile"}, 404
+
+            contact = StudentContact(
+                student_id=student_id,
+                firstname=firstname,
+                lastname=lastname,
+                student_mobile=student_mobile,
+                guardian_mobile_number=guardian_mobile,
+                preferred_phone_number=preferred_phone,
+                last_updated=datetime.datetime.utcnow()
+            )
+            session.add(contact)
+            session.commit()
+            logger.info(f"Cached profile for {student_id} from API")
+            return {
+                "status": "success",
+                "profile": {
+                    "student_id": contact.student_id,
+                    "firstname": contact.firstname,
+                    "lastname": contact.lastname,
+                    "phone_number": contact.preferred_phone_number,
+                    "last_updated": contact.last_updated.isoformat()
+                }
+            }, 200
+        except Exception as e:
+            logger.error(f"Error fetching profile for {student_id} from API: {str(e)}")
+            return {"error": f"Profile not found: {str(e)}"}, 404
+    except Exception as e:
+        logger.error(f"Error retrieving profile for {student_id}: {str(e)}")
+        return {"error": str(e)}, 500
+
 if __name__ == "__main__":
     logger.info(f"Environment variables - SMS_API_BASE_URL: {os.getenv('SMS_API_BASE_URL')}, SMS_API_KEY: {os.getenv('SMS_API_KEY')}")
+    logger.info(f"Registered routes: {[rule.rule for rule in app.url_map.iter_rules()]}")
     app.run(debug=app.config["DEBUG"], host="0.0.0.0", port=5000)
